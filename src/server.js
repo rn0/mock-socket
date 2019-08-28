@@ -5,7 +5,6 @@ import EventTarget from './event/target';
 import { CLOSE_CODES } from './constants';
 import networkBridge from './network-bridge';
 import globalObject from './helpers/global-object';
-import normalizeSendData from './helpers/normalize-send';
 import { createEvent, createMessageEvent, createCloseEvent } from './event/factory';
 
 class Server extends EventTarget {
@@ -119,41 +118,18 @@ class Server extends EventTarget {
   /*
    * Sends a generic message event to all mock clients.
    */
-  emit(event, data, options = {}) {
-    let { websockets } = options;
-
-    if (!websockets) {
-      websockets = networkBridge.websocketsLookup(this.url);
-    }
-
-    if (typeof options !== 'object' || arguments.length > 3) {
-      data = Array.prototype.slice.call(arguments, 1, arguments.length);
-      data = data.map(item => normalizeSendData(item));
-    } else {
-      data = normalizeSendData(data);
-    }
+  emit(event, data) {
+    const websockets = networkBridge.websocketsLookup(this.url);
 
     websockets.forEach(socket => {
-      if (Array.isArray(data)) {
-        socket.dispatchEvent(
-          createMessageEvent({
-            type: event,
-            data,
-            origin: this.url,
-            target: socket
-          }),
-          ...data
-        );
-      } else {
-        socket.dispatchEvent(
-          createMessageEvent({
-            type: event,
-            data,
-            origin: this.url,
-            target: socket
-          })
-        );
-      }
+      socket.dispatchEvent(
+        createMessageEvent({
+          type: event,
+          data,
+          origin: this.url,
+          target: socket
+        })
+      );
     });
   }
 
